@@ -1,175 +1,150 @@
 # exentra-ai-dev
 
-Un entorno de desarrollo controlado sobre OpenCode V2. Cada tarea va al modelo que
-le corresponde, el contexto se mantiene chico y el gasto de tokens queda acotado por
-diseño, no por suerte.
+Un entorno para programar con IA sin que se me vaya el presupuesto.
 
-Windows primero. También corre en macOS y Linux.
+Lo armé para trabajar en Windows, con PowerShell, y para que cada tarea la haga el
+modelo que le corresponde. No el más caro para todo.
 
-## El problema
+## Por qué lo armé
 
-Trabajar con IA en un proyecto real se rompe siempre en los mismos tres lugares:
+Cuando empecé a usar IA para programar me pasaban tres cosas todo el tiempo:
 
-| Problema | Qué pasa en la práctica | Cómo lo resuelve el harness |
+- Le pedía algo simple, como renombrar una función, y me lo resolvía un modelo carísimo.
+- La conversación crecía y cada mensaje costaba más que el anterior.
+- El agente tocaba archivos que no tenía que tocar.
+
+Esto ataca esas tres cosas. Reparte el trabajo entre modelos baratos y caros, mantiene
+el contexto corto, y le pone límites a lo que el agente puede hacer.
+
+## Cómo reparte el trabajo
+
+Uso cuatro niveles. La idea es simple: el que piensa cuesta caro y se usa poco, el que
+tipea cuesta barato y se usa mucho.
+
+| Nivel | Para qué | Ejemplo |
 | --- | --- | --- |
-| Un solo modelo para todo | Pagás precio de modelo caro para renombrar una variable, o usás uno barato para decidir una arquitectura | Cuatro tiers: el pensamiento es caro, el tipeo es barato |
-| El contexto crece sin control | Cada paso reenvía la historia completa y el costo por turno se multiplica | Compactación agresiva, límite de salida de herramientas, agentes ocultos gratis |
-| El agente hace de más | Sin reglas toca archivos que no debía, inventa comandos, rompe la base | Permisos por recurso, contrato explícito, revisores de solo lectura |
+| **T0** | Buscar, mapear, resumir | "¿Dónde está la lógica de login?" |
+| **T1** | Cosas mecánicas y correr testeos | "Renombrá esta función en los 8 archivos donde aparece" |
+| **T2** | Escribir el código del día a día | "Armá la pantalla de facturas" |
+| **T3** | Pensar, revisar y decidir | "¿Cómo guardo los pagos sin romper lo que ya anda?" |
 
-## Cómo funciona
+T0 usa un modelo gratis y no gasta nada. T1, T2 y T3 usan el plan de $10.
 
-```
-tarea
-  │
-  ├── ¿hay que pensar?    →  T3   arquitectura · review · seguridad
-  ├── ¿hay que escribir?  →  T2   implementación diaria
-  ├── ¿es mecánico?       →  T1   rename · formato · correr tests
-  └── ¿es solo buscar?    →  T0   mapear código · títulos · resumen
-```
+## Los agentes
 
-La escalada es explícita: cambiás de agente, o usás `/fast` y `/deep` sobre la misma
-tarea. El tier profundo piensa y devuelve un plan; no escribe el código.
+Cada agente hace una sola cosa y tiene su propio nivel asignado.
 
-## Tiers de modelo
-
-| Tier | Modelo | Entrada / salida por Mtok | Incluido en Go | Para qué |
-| --- | --- | --- | --- | --- |
-| T0 gratis | `opencode/deepseek-v4.1-flash-free` | $0 / $0 | no consume plan | títulos, resúmenes, compactación, mapeo |
-| T1 barato | `opencode-go/glm-5.3-flash` | $0.15 / $0.50 | $60/mes | cambios mecánicos, correr verificación |
-| T2 caballo de batalla | `opencode-go/kimi-k2.7-code` | $0.95 / $4.00 | $60/mes | implementación diaria, diseño, fixes |
-| T3 profundo | `opencode-go/kimi-k3.1-pro` | $2 / $10 | $15/mes | arquitectura, review, seguridad |
-
-Regla: **T3 piensa, T2 escribe, T1 tipea, T0 mapea.**
-
-Los precios salen de models.dev y cambian. Los agentes ocultos (`title`, `summary`,
-`compaction`) corren siempre en T0, con el modelo gratis: mantenimiento sin costo
-mientras trabajás.
-
-El remapeo de tiers vive en el frontmatter de cada agente y en cada comando. Para
-cambiar un tier, cambiás el `model:` y listo: no hay una tabla central que se pueda
-desincronizar.
-
-## Agentes (11)
-
-| Agente | Modo | Tier | Para qué |
-| --- | --- | --- | --- |
-| `exentra-dev` | primary | T2 | Implementación por defecto |
-| `exentra-plan` | primary | T3 | Arquitectura y planes, solo lectura |
-| `exentra-quick` | primary | T1 | Cambios mecánicos |
-| `exentra-scout` | subagent | T0 | Mapeo de código, solo lectura |
-| `exentra-reviewer` | subagent | T3 | Hallazgos ordenados por severidad |
-| `exentra-security` | subagent | T3 | AuthZ, secretos, aislamiento entre inquilinos |
-| `exentra-design` | subagent | T2 | Auditoría de interfaz contra el sistema de diseño |
-| `exentra-fixer` | subagent | T2 | Aplica solo hallazgos confirmados |
-| `exentra-migrator` | subagent | T2 | Cambios de esquema, backfill y rollback, solo local |
-| `exentra-verifier` | subagent | T1 | Corre lint/build/test y reporta la salida exacta |
-| `exentra-docs` | subagent | T2 | README, ADRs, documentación de API |
-
-Cada agente tiene su propio modelo, sus propios límites de pasos y sus propios
-permisos. No hay un agente comodín que pueda hacer todo.
-
-## Comandos (10)
-
-`/fast` · `/deep` · `/review` · `/security` · `/ui` · `/test` · `/commit` · `/ship` · `/map` · `/migrate`
-
-Cada comando fija agente y modelo. Escalás una tarea puntual sin tocar configuración.
-
-## Optimización de tokens
-
-| Palanca | Valor | Efecto |
+| Agente | Qué hace | Cuándo lo uso |
 | --- | --- | --- |
-| `compaction.keep.tokens` | 12000 | Cola literal más chica después de compactar |
-| `compaction.buffer` | 15% | Margen para que la compactación nunca desborde |
-| `experimental.background_compaction` | `true` | Compacta sin bloquear el turno |
-| `tool_output.max_lines` | 800 | Corta volcados de 5000 líneas |
-| `tool_output.max_bytes` | 30000 | Corta salidas enormes de un solo comando |
-| Agentes ocultos | T0 | Títulos, resúmenes y compactación a costo cero |
-| Skills | on demand | Se carga solo la que coincide con la tarea |
-| Contextos | por proyecto | Se compone el stack que usás, no los cinco |
-| Delegación | `exentra-scout` | El hilo principal no se llena mapeando archivos |
+| `exentra-dev` | Escribe el código | "Armá la pantalla de facturas" |
+| `exentra-plan` | Piensa y planifica, no escribe nada | "¿Cómo organizo esto?" |
+| `exentra-quick` | Cambios mecánicos | "Renombrá esto en todos lados" |
+| `exentra-scout` | Mapea el código y no toca nada | "¿Dónde está el login?" |
+| `exentra-reviewer` | Revisa antes de mergear | "¿Esto está bien?" |
+| `exentra-security` | Busca problemas de seguridad | "¿Esto es seguro?" |
+| `exentra-design` | Revisa que la pantalla no parezca plantilla | "¿Esto se ve bien?" |
+| `exentra-fixer` | Aplica solo lo que el review confirmó | "Arreglá lo que encontró el review" |
+| `exentra-migrator` | Migraciones de base de datos | "Agregá una columna sin romper nada" |
+| `exentra-verifier` | Corre lint, build y tests | "¿Compila?" |
+| `exentra-docs` | Documentación | "Escribime el README" |
 
-El detalle completo está en `docs/TOKENS.md`.
+Además hay tres agentes internos que no ves: generan los títulos de las sesiones, los
+resúmenes y la compactación. Corren en T0, así que no cuestan nada.
 
-## Instalación
+## Los comandos
+
+Cuando no quiero cambiar de agente a mano, uso un comando.
+
+| Comando | Qué hace |
+| --- | --- |
+| `/fast` | Pasa la tarea a T1, para algo mecánico |
+| `/deep` | Pasa la tarea a T3, para algo que necesita pensar |
+| `/review` | Revisa el código antes de mergear |
+| `/security` | Busca problemas de seguridad |
+| `/ui` | Revisa que la interfaz no parezca una plantilla |
+| `/test` | Corre los testeos |
+| `/commit` | Arma el commit |
+| `/ship` | Deja todo listo para subir |
+| `/map` | Mapea el código antes de tocarlo |
+| `/migrate` | Prepara una migración de base de datos |
+
+## Cómo lo instalo
+
+Necesitás OpenCode V2, Node 20 o más, y Git.
 
 ```powershell
 git clone https://github.com/martinexequielgomez/exentra-ai-dev.git
 cd exentra-ai-dev
 
-# Revisa la máquina antes de instalar
+# Revisa que la máquina tenga todo
 .\scripts\doctor.ps1
 
-# Instala en un proyecto
-.\scripts\install.ps1 -Target C:\ruta\al\proyecto -Profile nextjs
+# Lo instala en mi proyecto
+.\scripts\install.ps1 -Target C:\ruta\a\mi\proyecto -Profile nextjs
 ```
 
-| Modo | Dónde escribe | Cuándo usarlo |
+Después abro el proyecto con OpenCode, escribo `/agents` y elijo con qué agente
+trabajar.
+
+Se puede instalar de dos formas:
+
+| Forma | Dónde escribe | Cuándo la uso |
 | --- | --- | --- |
-| `-Mode project` (default) | `<proyecto>\.opencode` y `<proyecto>\opencode.jsonc` | Un proyecto concreto |
-| `-Mode global` | Configuración del usuario, con backup previo | Todos tus proyectos |
+| `-Mode project` | Solo en ese proyecto | Un proyecto concreto |
+| `-Mode global` | En toda mi máquina, con backup previo | Todos mis proyectos |
 
-El instalador es idempotente: correrlo dos veces da el mismo resultado. No pisa tu
-configuración: fusiona reglas y deja tus MCP y tus denegaciones como estaban. El
-bloque que compone en `AGENTS.md` está delimitado por marcadores
-`<!-- exentra-ai-dev:begin -->` y `<!-- exentra-ai-dev:end -->`.
+Se puede correr las veces que quieras: no duplica nada y no pisa mi configuración. Si
+ya tenía servidores MCP o reglas propias, las respeta y las deja como estaban.
 
-Perfiles de stack disponibles: `nextjs`, `web-spa`, `api`, `data`, `saas`. Podés
-combinar varios: `-Profile nextjs,api`.
+Los perfiles de stack son `nextjs`, `web-spa`, `api`, `data` y `saas`. Se pueden
+combinar: `-Profile nextjs,api`.
 
-Después abrís el proyecto con OpenCode y elegís agente con `/agents`.
+## Cuánto sale
 
-## Costos
+**$10 por mes.** Es el plan OpenCode Go, y no hace falta cargar créditos aparte.
 
-El harness corre sobre **OpenCode Go**, $10/mes. No hace falta cargar créditos.
+T0 no gasta nada porque usa un modelo gratis. Si algún día se agota la asignación de un
+modelo, los gratis siguen andando, así que nunca me quedo sin nada.
 
-La suscripción no es un pozo único: cada modelo tiene su propia asignación mensual en
-dólares, y el plan la reparte entre todos.
+Si quiero margen extra, en la página de Go se puede activar **Extra Usage**: cuando se
+termina la asignación, sigue con saldo prepago en vez de cortarse.
 
-| Modelo | Entrada / salida por Mtok | Incluido por mes |
-| --- | --- | --- |
-| GLM-5.3-Flash | $0.15 / $0.50 | $60 |
-| Kimi K2.7 Code | $0.95 / $4.00 | $60 |
-| Kimi K3.1 Pro | $2 / $10 | $15 |
+## Cómo cuida los tokens
 
-Además hay topes por ventana: 20% de la asignación cada 5 horas, 50% semanal, 100%
-mensual. Cuando un modelo se agota, los modelos gratis siguen respondiendo.
+- La conversación se compacta sola y guarda solo lo último, no todo.
+- Las salidas largas de los comandos se cortan antes de entrar al contexto.
+- Los títulos y resúmenes los hace el modelo gratis.
+- Las skills se cargan solo cuando la tarea las necesita.
+- El mapeo del código lo hace T0 en vez del agente principal.
 
-Si querés margen extra, en la página de Go se activa **Extra Usage**: al llegar al
-tope, la request cae sobre tu saldo prepago en vez de cortarse. Es opcional.
+## Qué hace por la seguridad
 
-Los modelos gratis funcionan sin suscripción ni saldo. Los tiers T1, T2 y T3 necesitan
-Go activo; sin suscripción la API responde
-`An active OpenCode Go subscription is required to use Go models`.
+- No puede leer archivos `.env`, claves `.pem`, `.key` ni credenciales.
+- No puede correr comandos destructivos como `rm -rf` o `git push --force`.
+- Hay un agente dedicado a revisar seguridad antes de mergear.
+- Las migraciones de base de datos solo corren contra una base local. Si el host no es
+  local, el agente se detiene y me pide permiso.
 
-## Verificación
-
-```powershell
-node scripts/validate.mjs   # estructura, agentes, permisos, conteos
-.\scripts\doctor.ps1        # entorno, herramientas, proyecto
-```
-
-`validate.mjs` falla si un agente declara un modelo inexistente, si una regla de
-permisos usa el vocabulario equivocado, o si falta una denegación de secretos. El
-workflow de `.github/workflows/validate.yml` corre lo mismo en Ubuntu y Windows.
-
-## Estructura
+## Qué hay adentro
 
 ```
-agents/     definiciones de agente (markdown + frontmatter)
-commands/   comandos con agente y modelo fijados
-skills/     un SKILL.md por skill, con referencias cuando hace falta
-contexts/   fragmentos de stack que se componen en el AGENTS.md del proyecto
-scripts/    install, doctor, validate
-docs/       SECURITY, DESIGN, TOKENS
+agents/     los agentes, uno por archivo
+commands/   los comandos, con su agente y su modelo
+skills/     el conocimiento que se carga solo cuando hace falta
+contexts/   pedazos de configuración por tipo de proyecto
+scripts/    instalador, chequeo de máquina y validador
+docs/       seguridad, diseño y tokens
 ```
 
 ## Requisitos
 
 - OpenCode V2
-- Node.js 20+
+- Node.js 20 o más
 - Git
-- PowerShell 5.1 o superior (Windows)
-- Opcional: Engram (memoria), Context7 (documentación), CodeGraph (mapeo de código)
+- PowerShell 5.1 o más (en Windows)
+
+Opcional: Engram para memoria, Context7 para documentación y CodeGraph para mapear el
+código.
 
 ## Licencia
 
