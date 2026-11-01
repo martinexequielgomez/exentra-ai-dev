@@ -1,0 +1,102 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    name: validate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate repository
+        run: node scripts/validate.mjs
+
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem scripts -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName, [ref]$tokens, [ref]$parseErrors
+            ) | Out-Null
+            if ($parseErrors.Count -gt 0) {
+              $failed = $true
+              foreach ($parseError in $parseErrors) {
+                Write-Error "$($_.Name):$($parseError.Extent.StartLineNumber) $($parseError.Message)"
+              }
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Install into a scratch project
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $scratch = Join-Path $env:RUNNER_TEMP 'exentra-smoke'
+          New-Item -ItemType Directory -Force -Path $scratch | Out-Null
+          @{ name = 'smoke'; scripts = @{ lint = 'echo lint'; build = 'echo build'; test = 'echo test' } } |
+            ConvertTo-Json | Set-Content -Encoding UTF8 (Join-Path $scratch 'package.json')
+          ./scripts/install.ps1 -Target $scratch -Profile nextjs,saas
+
+          $agents = Join-Path $scratch 'AGENTS.md'
+          if (-not (Test-Path $agents)) { throw 'AGENTS.md was not created' }
+          $text = Get-Content -Raw $agents
+          if (-not $text.Contains('<!-- exentra-ai-dev:begin -->')) { throw 'missing harness block' }
+          if (-not $text.Contains('## Stack: Next.js')) { throw 'nextjs context not composed' }
+          if (-not $text.Contains('npm run lint')) { throw 'verify block not replaced' }
+
+          $installedAgents = Get-ChildItem (Join-Path $scratch '.opencode\agents') -Filter *.md
+          if ($installedAgents.Count -lt 10) { throw "expected 10 agents, found $($installedAgents.Count)" }
+
+          $config = Join-Path $scratch 'opencode.jsonc'
+          if (-not (Test-Path $config)) { throw 'opencode.jsonc was not written' }
+
+          # Re-run to prove idempotency.
+          ./scripts/install.ps1 -Target $scratch -Profile nextjs,saas
+          $again = Get-Content -Raw $agents
+          $beginCount = ([regex]::Matches($again, '<!-- exentra-ai-dev:begin -->')).Count
+          if ($beginCount -ne 1) { throw "expected one harness block, found $beginCount" }
+
+      - name: Merge into an existing config
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $scratch = Join-Path $env:RUNNER_TEMP 'exentra-merge'
+          New-Item -ItemType Directory -Force -Path $scratch | Out-Null
+          $existing = Join-Path $scratch 'opencode.jsonc'
+          @'
+          {
+            // a comment that must survive the parser, not the writer
+            "model": "opencode/claude-sonnet-5-5",
+            "permissions": [
+              { "action": "edit", "resource": "**/generated/**", "effect": "deny" }
+            ],
+            "mcp": { "servers": { "mine": { "type": "remote", "url": "https://example.com/mcp" } } }
+          }
+          '@ | Set-Content -Encoding UTF8 $existing
+
+          node scripts/merge-config.mjs $existing ./opencode.jsonc $existing
+          $merged = Get-Content -Raw $existing | ConvertFrom-Json
+
+          if (-not $merged.mcp.servers.mine) { throw 'user MCP server was dropped' }
+          if (-not $merged.mcp.servers.engram) { throw 'harness MCP server was not added' }
+          if (-not $merged.compaction) { throw 'compaction block was not added' }
+
+          $denies = @($merged.permissions | Where-Object { $_.effect -eq 'deny' })
+          if ($denies.Count -eq 0) { throw 'no deny rules in the merged permissions' }
+          $last = $merged.permissions[-1]
+          if ($last.effect -eq 'allow') { throw 'a broad allow rule overrides the denies' }

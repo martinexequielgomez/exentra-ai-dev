@@ -1,0 +1,125 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // ---------------------------------------------------------------------------
+  // exentra-ai-dev — OpenCode V2 harness
+  //
+  // Default model = workhorse tier. Agents override it per tier:
+  //   T0 free      opencode/deepseek-v4.1-flash-free
+  //   T1 cheap     opencode/deepseek-v4.1-flash
+  //   T2 workhorse opencode/claude-sonnet-5-5
+  //   T3 deep      opencode/claude-opus-5-5
+  // ---------------------------------------------------------------------------
+
+  "model": "opencode/claude-sonnet-5-5",
+  "default_agent": "exentra-dev",
+
+  // --- Token economy ---------------------------------------------------------
+  // Keep a smaller verbatim tail and compact in the background so long
+  // sessions do not resend the whole history on every step.
+  "compaction": {
+    "auto": true,
+    "keep": { "tokens": 12000 },
+    "buffer": "15%"
+  },
+
+  // Truncate noisy tool output earlier than the 2000-line default.
+  "tool_output": {
+    "max_lines": 800,
+    "max_bytes": 30000
+  },
+
+  "experimental": {
+    "todo": true,
+    "subagent_depth": 1,
+    "background_compaction": true
+  },
+
+  // --- Maintenance agents on the free tier -----------------------------------
+  // V2 replacement for the deprecated `small_model` field.
+  "agents": {
+    "title": { "model": "opencode/deepseek-v4.1-flash-free" },
+    "summary": { "model": "opencode/deepseek-v4.1-flash-free" },
+    "compaction": { "model": "opencode/deepseek-v4.1-flash-free" }
+  },
+
+  // --- Permissions -----------------------------------------------------------
+  // Ordered rules: the LAST matching rule wins, so broad rules come first and
+  // the specific denials below override them.
+  //
+  // Pattern syntax, verified against OpenCode v2: `*` matches ANY characters,
+  // path separators included. So `*.env` matches `.env`, `sub/.env`, and
+  // `app/config/.env`. A `**/` prefix does NOT match a file in the project
+  // root (`**/.env` matches `sub/.env` but not `.env`), which is why no rule
+  // here uses it. scripts/validate.mjs rejects `**/` in read and edit rules.
+  "permissions": [
+    { "action": "read", "resource": "*", "effect": "allow" },
+    { "action": "read", "resource": "*.env", "effect": "deny" },
+    { "action": "read", "resource": "*.env.*", "effect": "deny" },
+    { "action": "read", "resource": "*.env.example", "effect": "allow" },
+    { "action": "read", "resource": "*.env.sample", "effect": "allow" },
+    { "action": "read", "resource": "*.env.template", "effect": "allow" },
+    { "action": "read", "resource": "*.ssh/*", "effect": "deny" },
+    { "action": "read", "resource": "*.pem", "effect": "deny" },
+    { "action": "read", "resource": "*.key", "effect": "deny" },
+    { "action": "read", "resource": "*.p12", "effect": "deny" },
+    { "action": "read", "resource": "*.aws/credentials", "effect": "deny" },
+    { "action": "read", "resource": "*.config/gh/hosts.y*ml", "effect": "deny" },
+    { "action": "read", "resource": "*.credentials/*", "effect": "deny" },
+    { "action": "read", "resource": "*.npmrc", "effect": "deny" },
+
+    { "action": "edit", "resource": "*", "effect": "allow" },
+    { "action": "edit", "resource": "*.env", "effect": "deny" },
+    { "action": "edit", "resource": "*.env.*", "effect": "deny" },
+    { "action": "edit", "resource": "*.env.example", "effect": "allow" },
+    { "action": "edit", "resource": "*.env.sample", "effect": "allow" },
+    { "action": "edit", "resource": "*.env.template", "effect": "allow" },
+    { "action": "edit", "resource": "*.ssh/*", "effect": "deny" },
+    { "action": "edit", "resource": "*.pem", "effect": "deny" },
+    { "action": "edit", "resource": "*.key", "effect": "deny" },
+    { "action": "edit", "resource": "*.p12", "effect": "deny" },
+    { "action": "edit", "resource": "*.git/*", "effect": "deny" },
+
+    { "action": "shell", "resource": "*", "effect": "allow" },
+    { "action": "shell", "resource": "rm -rf *", "effect": "deny" },
+    { "action": "shell", "resource": "rm -fr *", "effect": "deny" },
+    { "action": "shell", "resource": "Remove-Item *-Recurse -Force*", "effect": "deny" },
+    { "action": "shell", "resource": "Remove-Item *-Force -Recurse*", "effect": "deny" },
+    { "action": "shell", "resource": "rmdir /s /q *", "effect": "deny" },
+    { "action": "shell", "resource": "git clean *-f*", "effect": "deny" },
+    { "action": "shell", "resource": "git push --force*", "effect": "deny" },
+    { "action": "shell", "resource": "git push -f*", "effect": "deny" },
+    { "action": "shell", "resource": "git reset --hard*", "effect": "ask" },
+    { "action": "shell", "resource": "npm publish*", "effect": "ask" },
+    { "action": "shell", "resource": "gh repo delete*", "effect": "ask" },
+    { "action": "shell", "resource": "* | iex*", "effect": "deny" },
+    { "action": "shell", "resource": "* | Invoke-Expression*", "effect": "deny" },
+    { "action": "shell", "resource": "*Invoke-Expression*", "effect": "deny" },
+    { "action": "shell", "resource": "curl * -o *", "effect": "ask" },
+
+    { "action": "webfetch", "resource": "*", "effect": "allow" },
+    { "action": "websearch", "resource": "*", "effect": "allow" },
+    { "action": "skill", "resource": "*", "effect": "allow" }
+  ],
+
+  // --- MCP -------------------------------------------------------------------
+  // Engram provides persistent memory; Context7 provides library docs;
+  // CodeGraph maps the codebase so agents stop grepping blindly.
+  "mcp": {
+    "servers": {
+      "engram": {
+        "type": "local",
+        "command": ["engram", "mcp", "--tools=agent"]
+      },
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp"
+      },
+      "codegraph": {
+        "type": "local",
+        "command": ["cmd", "/c", "codegraph", "serve", "--mcp"],
+        "codemode": false
+      }
+    }
+  }
+}
