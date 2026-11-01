@@ -1,7 +1,7 @@
 ---
 description: Audit a screen against the design system
 agent: exentra-design
-model: opencode/claude-sonnet-5-5
+model: opencode-go/kimi-k2.7-code
 ---
 
 Audit this against the design system: $ARGUMENTS. If no target was given, audit

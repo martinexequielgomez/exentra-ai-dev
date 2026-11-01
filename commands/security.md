@@ -1,7 +1,7 @@
 ---
 description: Security review of a diff, file, or feature
 agent: exentra-security
-model: opencode/claude-opus-5-5
+model: opencode-go/kimi-k3.1-pro
 ---
 
 Security-review $ARGUMENTS. If no target was given, review the current uncommitted

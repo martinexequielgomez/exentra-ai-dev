@@ -6,12 +6,12 @@
   //
   // Default model = workhorse tier. Agents override it per tier:
   //   T0 free      opencode/deepseek-v4.1-flash-free
-  //   T1 cheap     opencode/deepseek-v4.1-flash
-  //   T2 workhorse opencode/claude-sonnet-5-5
-  //   T3 deep      opencode/claude-opus-5-5
+  //   T1 cheap     opencode-go/glm-5.3-flash
+  //   T2 workhorse opencode-go/kimi-k2.7-code
+  //   T3 deep      opencode-go/kimi-k3.1-pro
   // ---------------------------------------------------------------------------
 
-  "model": "opencode/claude-sonnet-5-5",
+  "model": "opencode-go/kimi-k2.7-code",
   "default_agent": "exentra-dev",
 
   // --- Token economy ---------------------------------------------------------

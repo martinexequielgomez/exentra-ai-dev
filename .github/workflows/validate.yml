@@ -81,7 +81,7 @@ jobs:
           @'
           {
             // a comment that must survive the parser, not the writer
-            "model": "opencode/claude-sonnet-5-5",
+            "model": "opencode-go/glm-5.3",
             "permissions": [
               { "action": "edit", "resource": "**/generated/**", "effect": "deny" }
             ],

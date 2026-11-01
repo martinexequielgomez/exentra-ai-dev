@@ -1,7 +1,7 @@
 ---
 description: Mechanical change on the cheap tier
 agent: exentra-quick
-model: opencode/deepseek-v4.1-flash
+model: opencode-go/glm-5.3-flash
 ---
 
 Do this as a mechanical change only: $ARGUMENTS

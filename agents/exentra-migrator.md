@@ -1,7 +1,7 @@
 ---
 description: Plans and writes data migrations. Schema change, backfill, rollback, verified locally only.
 mode: subagent
-model: opencode/claude-sonnet-5-5
+model: opencode-go/kimi-k2.7-code
 color: "#5A5F7A"
 steps: 30
 permission:

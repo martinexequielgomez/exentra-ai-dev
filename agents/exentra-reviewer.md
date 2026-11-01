@@ -1,7 +1,7 @@
 ---
 description: Read-only reviewer. Returns severity-ordered findings with evidence. Never edits code.
 mode: subagent
-model: opencode/claude-opus-5-5
+model: opencode-go/kimi-k3.1-pro
 color: "#B4443C"
 steps: 16
 permission:

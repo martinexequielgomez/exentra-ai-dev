@@ -1,7 +1,7 @@
 ---
 description: Plan and write a safe data migration with rollback
 agent: exentra-migrator
-model: opencode/claude-sonnet-5-5
+model: opencode-go/kimi-k2.7-code
 ---
 
 Plan and write this migration: $ARGUMENTS

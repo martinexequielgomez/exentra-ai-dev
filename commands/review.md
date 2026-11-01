@@ -1,7 +1,7 @@
 ---
 description: Review current changes for defects
 agent: exentra-reviewer
-model: opencode/claude-opus-5-5
+model: opencode-go/kimi-k3.1-pro
 ---
 
 Review $ARGUMENTS. If no target was given, review the current uncommitted diff.

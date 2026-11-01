@@ -1,7 +1,7 @@
 ---
 description: Default implementation agent. Writes code, tests, and docs for one work unit at a time.
 mode: primary
-model: opencode/claude-sonnet-5-5
+model: opencode-go/kimi-k2.7-code
 color: "#3F6E5A"
 steps: 40
 permission:

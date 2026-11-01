@@ -1,7 +1,7 @@
 ---
 description: Read-only UI reviewer. Audits screens against the exentra design system and reports findings.
 mode: subagent
-model: opencode/claude-sonnet-5-5
+model: opencode-go/kimi-k2.7-code
 color: "#A9741F"
 steps: 16
 permission:

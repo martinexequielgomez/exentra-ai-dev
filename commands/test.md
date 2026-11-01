@@ -1,7 +1,7 @@
 ---
 description: Run the test suite and report exactly what failed
 agent: exentra-verifier
-model: opencode/deepseek-v4.1-flash
+model: opencode-go/glm-5.3-flash
 ---
 
 Run the project's test command and report the result: $ARGUMENTS

@@ -1,7 +1,7 @@
 ---
 description: Runs lint, typecheck, build, and tests. Reports exact results. Never edits code.
 mode: subagent
-model: opencode/deepseek-v4.1-flash
+model: opencode-go/glm-5.3-flash
 color: "#7A8B99"
 steps: 12
 permission:

@@ -1,7 +1,7 @@
 ---
 description: Architecture and planning agent. Reads code, designs solutions, never edits application files.
 mode: primary
-model: opencode/claude-opus-5-5
+model: opencode-go/kimi-k3.1-pro
 color: "#6B5B95"
 steps: 30
 permission:

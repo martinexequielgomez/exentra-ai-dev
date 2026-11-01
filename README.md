@@ -32,17 +32,22 @@ tarea. El tier profundo piensa y devuelve un plan; no escribe el código.
 
 ## Tiers de modelo
 
-| Tier | Modelo | Entrada / salida por Mtok | Para qué |
-| --- | --- | --- | --- |
-| T0 gratis | `opencode/deepseek-v4.1-flash-free` | $0 / $0 | títulos, resúmenes, compactación, mapeo |
-| T1 barato | `opencode/deepseek-v4.1-flash` | $0.30 / $1.20 | cambios mecánicos, correr verificación |
-| T2 caballo de batalla | `opencode/claude-sonnet-5-5` | $2 / $10 | implementación diaria, auditoría de diseño |
-| T3 profundo | `opencode/claude-opus-5-5` | $4 / $20 | arquitectura, review, seguridad |
+| Tier | Modelo | Entrada / salida por Mtok | Incluido en Go | Para qué |
+| --- | --- | --- | --- | --- |
+| T0 gratis | `opencode/deepseek-v4.1-flash-free` | $0 / $0 | no consume plan | títulos, resúmenes, compactación, mapeo |
+| T1 barato | `opencode-go/glm-5.3-flash` | $0.15 / $0.50 | $60/mes | cambios mecánicos, correr verificación |
+| T2 caballo de batalla | `opencode-go/kimi-k2.7-code` | $0.95 / $4.00 | $60/mes | implementación diaria, diseño, fixes |
+| T3 profundo | `opencode-go/kimi-k3.1-pro` | $2 / $10 | $15/mes | arquitectura, review, seguridad |
 
 Regla: **T3 piensa, T2 escribe, T1 tipea, T0 mapea.**
 
 Los precios salen de models.dev y cambian. Los agentes ocultos (`title`, `summary`,
-`compaction`) corren siempre en T0: mantenimiento gratis mientras trabajás.
+`compaction`) corren siempre en T0, con el modelo gratis: mantenimiento sin costo
+mientras trabajás.
+
+El remapeo de tiers vive en el frontmatter de cada agente y en cada comando. Para
+cambiar un tier, cambiás el `model:` y listo: no hay una tabla central que se pueda
+desincronizar.
 
 ## Agentes (11)
 
@@ -115,23 +120,26 @@ Después abrís el proyecto con OpenCode y elegís agente con `/agents`.
 
 ## Costos
 
-Los modelos gratis funcionan sin saldo. Los tiers T1, T2 y T3 necesitan que la cuenta
-tenga fondos, porque son modelos pagos. Sin saldo, la API responde
-`Insufficient account funds` y el agente no arranca.
+El harness corre sobre **OpenCode Go**, $10/mes. No hace falta cargar créditos.
 
-Hay dos formas de pagar, y no cubren lo mismo:
+La suscripción no es un pozo único: cada modelo tiene su propia asignación mensual en
+dólares, y el plan la reparte entre todos.
 
-| Vía | Cómo funciona | Qué modelos te da |
+| Modelo | Entrada / salida por Mtok | Incluido por mes |
 | --- | --- | --- |
-| Console, pago por uso | Cargás créditos ($10, $50, $100 o el monto que quieras) y pagás por token consumido | Todos, incluidos `claude-sonnet-5-5` y `claude-opus-5-5` |
-| OpenCode Go | Suscripción de $10/mes con límite de uso incluido | Modelos abiertos: DeepSeek V4.1 Flash, GLM-5.3, Qwen3.8 Max, Kimi, Claude Haiku 5.5. **No incluye Sonnet 5.5 ni Opus 5.5** |
+| GLM-5.3-Flash | $0.15 / $0.50 | $60 |
+| Kimi K2.7 Code | $0.95 / $4.00 | $60 |
+| Kimi K3.1 Pro | $2 / $10 | $15 |
 
-Con créditos, el harness funciona tal como está diseñado. Con Go, los tiers T2 y T3
-hay que remapearlos a los modelos que incluye la suscripción.
+Además hay topes por ventana: 20% de la asignación cada 5 horas, 50% semanal, 100%
+mensual. Cuando un modelo se agota, los modelos gratis siguen respondiendo.
 
-Para no llevarte una sorpresa, en el Console podés fijar un presupuesto mensual en
-dólares, por workspace o por miembro: cuando el gasto llega al tope, las requests se
-cortan solas.
+Si querés margen extra, en la página de Go se activa **Extra Usage**: al llegar al
+tope, la request cae sobre tu saldo prepago en vez de cortarse. Es opcional.
+
+Los modelos gratis funcionan sin suscripción ni saldo. Los tiers T1, T2 y T3 necesitan
+Go activo; sin suscripción la API responde
+`An active OpenCode Go subscription is required to use Go models`.
 
 ## Verificación
 

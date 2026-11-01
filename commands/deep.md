@@ -1,7 +1,7 @@
 ---
 description: Escalate to the deep tier for a hard problem
 agent: exentra-plan
-model: opencode/claude-opus-5-5
+model: opencode-go/kimi-k3.1-pro
 ---
 
 Think carefully about this and give me the design, not the code: $ARGUMENTS

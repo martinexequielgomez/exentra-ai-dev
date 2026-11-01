@@ -1,7 +1,7 @@
 ---
 description: Cheap agent for mechanical changes only. Renames, formatting, boilerplate, config edits.
 mode: primary
-model: opencode/deepseek-v4.1-flash
+model: opencode-go/glm-5.3-flash
 color: "#8A8A8A"
 steps: 20
 permission:

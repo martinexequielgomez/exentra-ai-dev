@@ -1,7 +1,7 @@
 ---
 description: Writes and updates documentation only. README, ADRs, API reference, onboarding guides.
 mode: subagent
-model: opencode/claude-sonnet-5-5
+model: opencode-go/kimi-k2.7-code
 color: "#6B5B95"
 steps: 20
 permission:

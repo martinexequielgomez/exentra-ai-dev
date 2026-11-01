@@ -1,7 +1,7 @@
 ---
 description: Applies confirmed review findings. Surgical fixes only, one finding at a time.
 mode: subagent
-model: opencode/claude-sonnet-5-5
+model: opencode-go/kimi-k2.7-code
 color: "#3F6E5A"
 steps: 24
 permission:

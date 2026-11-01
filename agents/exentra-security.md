@@ -1,7 +1,7 @@
 ---
 description: Read-only security reviewer for auth, authorization, secrets, dependencies, and multi-tenant isolation.
 mode: subagent
-model: opencode/claude-opus-5-5
+model: opencode-go/kimi-k3.1-pro
 color: "#7A2E2E"
 steps: 16
 permission:
