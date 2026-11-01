@@ -1,6 +1,7 @@
 # exentra-ai-dev
 
-Engineering harness for web products and SaaS.
+Controlled development environment for AI-assisted engineering: tiered models,
+token economy, and hard limits on what an agent may touch.
 Stack: React · JavaScript · TypeScript · SQL · HTTP APIs. Windows-first.
 
 ---
