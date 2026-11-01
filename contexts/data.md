@@ -15,7 +15,8 @@ PostgreSQL, Drizzle or Prisma, versioned migrations.
 - One transaction per business operation. No external HTTP call inside a
   transaction.
 - Migrations: one change each, reversible or documented as irreversible. Adding
-  a `not null` column means add nullable, backfill, then constrain.
+  a `not null` column means add nullable, backfill, then constrain. Load the
+  `db-migrations` skill and delegate to `exentra-migrator` before writing one.
 - Seed data lives in a script, never in a migration.
 
 Verify:

@@ -8,9 +8,9 @@ Built for Windows. Also runs on macOS and Linux.
 
 ## What it gives you
 
-- **10 agents** split by cost tier, so thinking is expensive and typing is cheap.
-- **12 skills** that load only when their trigger matches.
-- **9 commands** to escalate a single task without editing configuration.
+- **11 agents** split by cost tier, so thinking is expensive and typing is cheap.
+- **13 skills** that load only when their trigger matches.
+- **10 commands** to escalate a single task without editing configuration.
 - **Security in layers**: permission rules, a mandatory checklist, a dedicated
   read-only reviewer, and an audit gate before commit.
 - **A design system** with hard prohibitions instead of vague taste.
@@ -59,6 +59,7 @@ T3 is for thinking, not for writing.
 | `exentra-security` | subagent | T3 | OWASP, authz, secrets, multi-tenant |
 | `exentra-design` | subagent | T2 | UI audit against the design system |
 | `exentra-fixer` | subagent | T2 | Applies confirmed findings only |
+| `exentra-migrator` | subagent | T2 | Schema changes, backfills, rollback, local only |
 | `exentra-verifier` | subagent | T1 | Runs lint/build/test, reports exact output |
 | `exentra-docs` | subagent | T2 | README, ADRs, API docs |
 
@@ -66,13 +67,13 @@ Hidden maintenance agents (`title`, `summary`, `compaction`) run on the free tie
 
 ## Commands
 
-`/fast` · `/deep` · `/review` · `/security` · `/ui` · `/test` · `/commit` · `/ship` · `/map`
+`/fast` · `/deep` · `/review` · `/security` · `/ui` · `/test` · `/commit` · `/ship` · `/map` · `/migrate`
 
 ## Skills
 
-`react-feature` · `typescript-strict` · `js-modern` · `sql-query` · `api-contract` ·
-`auth-security` · `saas-architecture` · `design-system` · `testing-strategy` ·
-`windows-dev` · `verify-before-commit` · `review-protocol`
+`react-feature` · `typescript-strict` · `js-modern` · `sql-query` · `db-migrations` ·
+`api-contract` · `auth-security` · `saas-architecture` · `design-system` ·
+`testing-strategy` · `windows-dev` · `verify-before-commit` · `review-protocol`
 
 ## Contexts
 

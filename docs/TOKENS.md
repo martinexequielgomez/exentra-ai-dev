@@ -29,6 +29,7 @@ Prices come from models.dev and change. Check them before optimizing.
 | Implementation | `exentra-dev` | T2 |
 | Design audit | `exentra-design` | T2 |
 | Fixes from confirmed findings | `exentra-fixer` | T2 |
+| Schema changes, backfills | `exentra-migrator` | T2 |
 | Architecture | `exentra-plan` | T3 |
 | Review, security | `exentra-reviewer`, `exentra-security` | T3 |
 

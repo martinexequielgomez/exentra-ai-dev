@@ -24,6 +24,8 @@ Stack: React · JavaScript · TypeScript · SQL · HTTP APIs. Windows-first.
 - Never hardcode secrets, tokens, API keys, or connection strings.
 - Never add AI attribution, co-author trailers, or "Generated with" lines to commits.
 - Smallest change that solves the problem. No drive-by refactors, no renames nobody asked for.
+- Never run a migration against a non-local database. Never drop or truncate data without
+  an explicit human yes.
 - If the change needs to touch files outside the stated scope, stop and ask first.
 - When two attempts fail on the same problem, stop and escalate instead of looping.
 
@@ -89,6 +91,7 @@ Full rules: skill `design-system`. Minimums that always apply:
 | New screen or redesign | `exentra-design` |
 | Noisy build/test output | `exentra-verifier` |
 | Confirmed findings to apply | `exentra-fixer` |
+| Schema change, backfill, migration | `exentra-migrator` |
 | README, ADR, API docs | `exentra-docs` |
 
 ## 9. Memory
